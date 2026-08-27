@@ -1,78 +1,245 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ваше Имя - Бизнесмен и Основатель Компаний</title>
-    <style>
-        body {
-            font-family: 'Times New Roman', serif;
-            background-color: #000;
-            color: #fff;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            text-align: center;
-            padding: 50px 0;
-        }
-        header h1 {
-            font-size: 2.5em;
-            margin: 0;
-        }
-        section {
-            padding: 20px;
-        }
-        .content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .gallery img {
-            width: 100%;
-            height: auto;
-            margin-bottom: 20px;
-        }
-        .social-links a {
-            color: #fff;
-            text-decoration: none;
-            margin: 0 10px;
-            font-size: 1.2em;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Панель владельца бизнеса для Битрикс24</title>
+  <script src="https://api.bitrix24.com/api/v1/"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: rgba(255,255,255,.08);
+      --panel-strong: rgba(255,255,255,.13);
+      --text: #f7fbff;
+      --muted: #9eb1c8;
+      --accent: #27d4ff;
+      --good: #50e39a;
+      --warn: #ffcc66;
+      --bad: #ff6b7a;
+      --line: rgba(255,255,255,.14);
+      --shadow: 0 24px 80px rgba(0,0,0,.35);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(39,212,255,.22), transparent 36rem),
+        radial-gradient(circle at 80% 10%, rgba(80,227,154,.16), transparent 32rem),
+        linear-gradient(135deg, #050914, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app { width: min(1440px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 44px; }
+    header { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), var(--good)); box-shadow: 0 0 36px rgba(39,212,255,.36); }
+    h1 { font-size: clamp(1.55rem, 3vw, 2.8rem); margin: 0 0 6px; letter-spacing: -.04em; }
+    .sub { margin: 0; color: var(--muted); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    button, .button { border: 0; border-radius: 14px; padding: 12px 16px; color: #03101b; background: var(--accent); font-weight: 800; cursor: pointer; text-decoration: none; }
+    button.secondary { color: var(--text); background: var(--panel-strong); border: 1px solid var(--line); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .hero { display: grid; grid-template-columns: 1.45fr .85fr; gap: 18px; margin-bottom: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow); backdrop-filter: blur(18px); padding: 22px; }
+    .hero-copy h2 { font-size: clamp(2rem, 5vw, 4.2rem); line-height: .95; margin: 0 0 18px; letter-spacing: -.065em; }
+    .hero-copy p { color: var(--muted); max-width: 820px; font-size: 1.05rem; line-height: 1.7; }
+    .status { display: grid; gap: 10px; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.06); }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 999px; background: rgba(39,212,255,.15); color: #c9f5ff; font-size: .85rem; font-weight: 700; }
+    .dot { width: 9px; height: 9px; border-radius: 999px; background: var(--warn); box-shadow: 0 0 16px currentColor; }
+    .dot.ok { background: var(--good); }
+
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .metric { min-height: 160px; position: relative; overflow: hidden; }
+    .metric::after { content: ""; position: absolute; inset: auto -20px -50px auto; width: 130px; height: 130px; border-radius: 50%; background: rgba(39,212,255,.13); }
+    .metric small { color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .value { font-size: 2.1rem; font-weight: 900; letter-spacing: -.05em; margin: 16px 0 6px; }
+    .trend { color: var(--good); font-weight: 800; }
+    .trend.bad { color: var(--bad); }
+    .wide { grid-column: span 2; }
+    .section-title { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 28px 0 12px; }
+    .section-title h3 { margin: 0; font-size: 1.45rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 13px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+    .bar { height: 9px; background: rgba(255,255,255,.12); border-radius: 999px; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--good)); }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .list { display: grid; gap: 12px; }
+    .item { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.05); }
+    .item b { display: block; margin-bottom: 5px; }
+    .item span { color: var(--muted); }
+    .risk { color: var(--warn); font-weight: 900; }
+    .risk.high { color: var(--bad); }
+    .modal { position: fixed; inset: 0; display: none; place-items: center; background: rgba(2,7,14,.72); padding: 18px; z-index: 5; }
+    .modal.open { display: grid; }
+    .modal .card { width: min(560px, 100%); }
+    label { display: block; color: var(--muted); margin: 12px 0 7px; font-weight: 700; }
+    input { width: 100%; border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; background: rgba(0,0,0,.22); color: var(--text); font-size: 1rem; }
+    .note { color: var(--muted); font-size: .9rem; line-height: 1.55; }
+    @media (max-width: 980px) { .hero, .split { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 620px) { header { align-items: flex-start; flex-direction: column; } .grid { grid-template-columns: 1fr; } .wide { grid-column: span 1; } }
+  </style>
 </head>
 <body>
+  <main class="app">
     <header>
-        <h1>Ваше Имя</h1>
-        <p>Бизнесмен, Основатель Компаний BestComKZ, Франчайзи RichAroma, Франчайзи Само</p>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Business Owner Cockpit</h1>
+          <p class="sub">Метрики, авторизация и запуск внутри Битрикс24</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="refreshBtn">Обновить демо-данные</button>
+        <button id="authBtn">Авторизоваться</button>
+      </div>
     </header>
 
-    <section class="content">
-        <h2>Обо мне</h2>
-        <p>Я бизнесмен, основатель компаний по системам безопасности BestComKZ, франчайзи сети RichAroma, франчайзи Само в городе Атырау. Я партнер Саидмурода Давлатова и помогаю предпринимателям улучшать свои бизнесы благодаря новым технологиям.</p>
-
-        <h2>Галерея изображений</h2>
-        <div class="gallery">
-            <!-- Пример изображения, добавьте свои изображения здесь -->
-            <img src="your-image1.jpg" alt="Изображение 1">
-            <img src="your-image2.jpg" alt="Изображение 2">
-            <img src="your-image3.jpg" alt="Изображение 3">
-        </div>
-
-        <h2>Контакты и социальные сети</h2>
-        <p>Свяжитесь со мной через следующие социальные сети:</p>
-        <div class="social-links">
-            <a href="https://www.facebook.com/yourprofile" target="_blank">Facebook</a>
-            <a href="https://www.instagram.com/yourprofile" target="_blank">Instagram</a>
-            <a href="https://www.linkedin.com/in/yourprofile" target="_blank">LinkedIn</a>
-        </div>
+    <section class="hero">
+      <div class="card hero-copy">
+        <span class="pill">Единая панель собственника</span>
+        <h2>Все ключевые показатели бизнеса в одном окне.</h2>
+        <p>Приложение собирает выручку, маржинальность, воронку продаж, дебиторку, задачи, клиентов, эффективность команды и риски. При открытии внутри Битрикс24 используется JS SDK и OAuth-контекст портала; вне портала доступен безопасный демо-режим.</p>
+      </div>
+      <aside class="card status" aria-label="Статус интеграции">
+        <div class="status-row"><span>Авторизация</span><strong id="authStatus"><span class="dot"></span> Демо</strong></div>
+        <div class="status-row"><span>Портал</span><strong id="portalStatus">Не обнаружен</strong></div>
+        <div class="status-row"><span>Источник данных</span><strong id="dataStatus">Демо-набор</strong></div>
+        <p class="note">API-ключи не сохраняются в коде и не публикуются в браузере. Для продакшена храните ключ Вайбкод на сервере или в секретах деплоя.</p>
+      </aside>
     </section>
 
-    <footer>
-        <p>&copy; 2024 Ваше Имя. Все права защищены.</p>
-    </footer>
+    <section class="grid" id="metricsGrid"></section>
+
+    <div class="section-title">
+      <h3>Воронка и операционные метрики</h3>
+      <span class="pill" id="updatedAt">Обновлено сейчас</span>
+    </div>
+    <section class="card table-wrap">
+      <table>
+        <thead><tr><th>Направление</th><th>План</th><th>Факт</th><th>Выполнение</th><th>Ответственный</th></tr></thead>
+        <tbody id="pipelineRows"></tbody>
+      </table>
+    </section>
+
+    <div class="section-title"><h3>Контроль собственника</h3><span class="sub">Риски, деньги, команда</span></div>
+    <section class="split">
+      <div class="card"><h3>Сигналы риска</h3><div class="list" id="riskList"></div></div>
+      <div class="card"><h3>Приоритеты на неделю</h3><div class="list" id="priorityList"></div></div>
+    </section>
+  </main>
+
+  <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="card">
+      <h2 id="authTitle">Авторизация</h2>
+      <p class="note">Внутри Битрикс24 нажмите «Войти через Битрикс24». Для локальной проверки можно указать адрес портала вручную.</p>
+      <label for="portalInput">Адрес портала</label>
+      <input id="portalInput" placeholder="https://example.bitrix24.ru" />
+      <div class="actions" style="margin-top:16px; justify-content:flex-start">
+        <button id="bitrixLogin">Войти через Битрикс24</button>
+        <button class="secondary" id="demoLogin">Продолжить в демо</button>
+        <button class="secondary" id="closeModal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const formatMoney = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 });
+    const formatNum = new Intl.NumberFormat('ru-RU');
+    const state = { portal: null, authorized: false, dataMode: 'Демо-набор' };
+
+    const baseMetrics = [
+      ['Выручка MTD', 58400000, '+18% к прошлому месяцу', 'money'],
+      ['Валовая маржа', 34.8, '+2.1 п.п.', 'percent'],
+      ['EBITDA', 12600000, '+11%', 'money'],
+      ['Денежный остаток', 21900000, '42 дня runway', 'money'],
+      ['Новые лиды', 842, '+24%', 'number'],
+      ['Конверсия в сделку', 19.4, '-1.6 п.п.', 'percent', true],
+      ['Средний чек', 312000, '+7%', 'money'],
+      ['Просроченная дебиторка', 4700000, 'требует внимания', 'money', true],
+      ['NPS клиентов', 74, '+5 пунктов', 'number'],
+      ['SLA задач', 91.6, '+3.4 п.п.', 'percent'],
+      ['Загрузка команды', 86, 'норма', 'percent'],
+      ['Повторные продажи', 28.2, '+4.8 п.п.', 'percent']
+    ];
+
+    const pipelines = [
+      ['Продажи', 65000000, 58400000, 'Коммерческий директор'],
+      ['Маркетинг: лиды', 900, 842, 'CMO'],
+      ['Проекты: сдача в срок', 95, 91.6, 'COO'],
+      ['Финансы: сбор ДЗ', 12000000, 7300000, 'CFO'],
+      ['Клиентский сервис', 80, 74, 'CX Lead']
+    ];
+
+    const risks = [
+      ['Просрочка оплат 4,7 млн ₸', 'Поставить авто-задачи ответственным и контроль собственнику.', 'high'],
+      ['Конверсия снизилась на 1,6 п.п.', 'Проверить качество лидов и скрипты менеджеров.', 'medium'],
+      ['3 сделки без движения 14+ дней', 'Запланировать звонки ЛПР сегодня.', 'medium']
+    ];
+
+    const priorities = [
+      ['Ускорить сбор дебиторки', 'Топ-10 должников, дедлайн и ответственный в CRM.'],
+      ['Поднять маржу', 'Разобрать скидки выше 12% и низкомаржинальные сделки.'],
+      ['Усилить повторные продажи', 'Сегментировать клиентов и запустить касания.']
+    ];
+
+    function jitter(value) { return Math.round(value * (0.94 + Math.random() * 0.12)); }
+    function renderMetrics() {
+      document.getElementById('metricsGrid').innerHTML = baseMetrics.map(([name, raw, trend, type, bad], idx) => {
+        const value = type === 'money' ? formatMoney.format(jitter(raw)) : type === 'percent' ? `${(raw + (Math.random() - .5) * 2).toFixed(1)}%` : formatNum.format(jitter(raw));
+        return `<article class="card metric ${idx < 4 ? 'wide' : ''}"><small>${name}</small><div class="value">${value}</div><div class="trend ${bad ? 'bad' : ''}">${trend}</div></article>`;
+      }).join('');
+    }
+
+    function renderTable() {
+      document.getElementById('pipelineRows').innerHTML = pipelines.map(([name, plan, fact, owner]) => {
+        const percent = Math.min(100, Math.round(fact / plan * 100));
+        const planText = plan > 1000 ? formatMoney.format(plan) : formatNum.format(plan);
+        const factText = fact > 1000 ? formatMoney.format(jitter(fact)) : formatNum.format(fact);
+        return `<tr><td><strong>${name}</strong></td><td>${planText}</td><td>${factText}</td><td><div class="bar"><span style="width:${percent}%"></span></div> ${percent}%</td><td>${owner}</td></tr>`;
+      }).join('');
+    }
+
+    function renderLists() {
+      document.getElementById('riskList').innerHTML = risks.map(([title, text, level]) => `<div class="item"><div><b>${title}</b><span>${text}</span></div><div class="risk ${level === 'high' ? 'high' : ''}">${level === 'high' ? 'Высокий' : 'Средний'}</div></div>`).join('');
+      document.getElementById('priorityList').innerHTML = priorities.map(([title, text]) => `<div class="item"><div><b>${title}</b><span>${text}</span></div><div>→</div></div>`).join('');
+    }
+
+    function updateStatus() {
+      document.getElementById('authStatus').innerHTML = `<span class="dot ${state.authorized ? 'ok' : ''}"></span> ${state.authorized ? 'Выполнена' : 'Демо'}`;
+      document.getElementById('portalStatus').textContent = state.portal || 'Не обнаружен';
+      document.getElementById('dataStatus').textContent = state.dataMode;
+      document.getElementById('updatedAt').textContent = `Обновлено ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    function initBitrix() {
+      if (!window.BX24) return;
+      BX24.init(() => {
+        state.authorized = true;
+        state.dataMode = 'Битрикс24 SDK';
+        state.portal = BX24.getDomain ? BX24.getDomain() : 'Bitrix24';
+        updateStatus();
+        if (BX24.callBatch) {
+          BX24.callBatch({ profile: ['profile', {}], deals: ['crm.deal.list', { select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID'], order: { ID: 'DESC' }, start: 0 }] }, () => {});
+        }
+      });
+    }
+
+    document.getElementById('authBtn').onclick = () => document.getElementById('authModal').classList.add('open');
+    document.getElementById('closeModal').onclick = () => document.getElementById('authModal').classList.remove('open');
+    document.getElementById('demoLogin').onclick = () => { state.authorized = true; state.dataMode = 'Демо после входа'; state.portal = document.getElementById('portalInput').value || 'demo.bitrix24.ru'; updateStatus(); document.getElementById('authModal').classList.remove('open'); };
+    document.getElementById('bitrixLogin').onclick = () => { initBitrix(); document.getElementById('authModal').classList.remove('open'); };
+    document.getElementById('refreshBtn').onclick = () => { renderMetrics(); renderTable(); updateStatus(); };
+
+    renderMetrics(); renderTable(); renderLists(); updateStatus(); initBitrix();
+  </script>
 </body>
 </html>
